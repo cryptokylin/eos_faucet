@@ -18,7 +18,7 @@ python clfaucet.py
 
 you can create at most 1000 accounts per day. 
 ```
-create account: make request on http://13.125.53.113/create_account?<new_account_name>
+curl http://13.125.53.113/create_account?<new_account_name>
 ```
 
 you can get 100 tokens each call and max 1000 tokens per day. 
