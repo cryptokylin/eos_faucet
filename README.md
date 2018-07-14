@@ -6,7 +6,7 @@ cd your_working_dir
 
 https://github.com/cryptokylin/eos_faucet.git
 
-cd eos_fauce
+cd eos_faucet
 ```
 open wallet.py, paste account (to create account, transfer tokens) name, wallet name, wallet password accordingly, then save
 
