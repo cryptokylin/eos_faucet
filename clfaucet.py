@@ -127,6 +127,7 @@ class GetTokenHandler(tornado.web.RequestHandler):
 
   def _write_response(self, code, msg):
     self.set_status(code)
+    self.set_header('Content-Type', 'application/json; charset=UTF-8')
     self.write(msg)
 
   def _handle(self, data):
@@ -212,6 +213,7 @@ class CreateAccountHandler(tornado.web.RequestHandler):
 
   def _write_response(self, code, msg):
     self.set_status(code)
+    self.set_header('Content-Type', 'application/json; charset=UTF-8')
     self.write(msg)
 
   def _handle(self, request):
