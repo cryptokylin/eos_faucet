@@ -16,8 +16,7 @@ import ratelimit
 # ------ token transfer limiter
 
 def token_limit_exceed(handler):
-    handler.set_status(403)
-    handler.write("{\"msg\":\"reach 24 hours max token amount\"}")
+    write_json_response(handler, {'msg': 'reach 24 hours max token amount'}, 403)
 
 single_get_token_call_amount = 100
 
@@ -31,6 +30,11 @@ ip_24h_token_amount_limiter = ratelimit.RateLimitType(
 
 # ------------------------------------------------------------------------------------------
 # ------ common functions
+
+def write_json_response(handler, msg, code=200):
+  handler.set_status(code)
+  handler.set_header('Content-Type', 'application/json; charset=UTF-8')
+  handler.write(msg)
 
 def is_valid_account_name(account_name):
   return len(account_name) < 13 and len(account_name) > 0 and not re.search(r'[^a-z1-5\.]', account_name)
@@ -110,12 +114,12 @@ class GetTokenHandler(tornado.web.RequestHandler):
       return None
 
   def _os_cmd_transfer(self, param):
-    cmdline = 'cleos --url {} transfer {} {} "{} {}" {}'.format( eosapi.NODEOS_URL,
-                                                              param['from'],
-                                                              param['to'],
-                                                              param['quantity'],
-                                                              param['symbol'],
-                                                              param['memo'])
+    cmdline = 'cleos --url {} transfer {} {} "{} {}" {}'.format(eosapi.NODEOS_URL,
+                                                                param['from'],
+                                                                param['to'],
+                                                                param['quantity'],
+                                                                param['symbol'],
+                                                                param['memo'])
     result = os.system(cmdline)
     return result == 0
 
@@ -125,24 +129,18 @@ class GetTokenHandler(tornado.web.RequestHandler):
     else:
       return False
 
-  def _write_response(self, code, msg):
-    self.set_status(code)
-    self.set_header('Content-Type', 'application/json; charset=UTF-8')
-    self.write(msg)
-
   def _handle(self, data):
     param = self._assembly_args(data)
     if param:
       if self._make_transfer(param):
         ip_24h_token_amount_limiter.increase_amount(param['quantity'], self)
-        donemsg = "{\"msg\":\"succeeded\"}"
-        self.write(donemsg)
+        write_json_response(self, {'msg': 'succeeded'})
       else:
-        failmsg = "{\"msg\":\"failed, possible reason: account does not exist\"}"
-        self._write_response(400, failmsg)
+        failmsg = {'msg': 'transaction failed, possible reason: account does not exist'}
+        write_json_response(self, failmsg, 400)
     else:
-      fmtmsg = json.dumps({'msg':'please use request with URL of format: http://13.125.53.113/get_token?valid_account_name'})
-      self._write_response(400, fmtmsg)
+      fmtmsg = {'msg':'please use request with URL of format: http://13.125.53.113/get_token?valid_account_name'}
+      write_json_response(self, fmtmsg, 400)
 
   @ratelimit.limit_by(ip_24h_token_amount_limiter)
   def post(self):
@@ -160,8 +158,7 @@ class GetTokenHandler(tornado.web.RequestHandler):
 # ------ account creation limiter
 
 def newaccount_limit_exceed(handler):
-    handler.set_status(403)
-    handler.write("{\"msg\":\"reach 24 hours max amount of account creation\"}")
+    write_json_response(handler, {'msg': 'reach 24 hours max amount of account creation'}, 403)
 
 ip_24h_newaccount_amount_limiter = ratelimit.RateLimitType(
   name = "ip_24h_newaccount_amount",
@@ -211,22 +208,17 @@ class CreateAccountHandler(tornado.web.RequestHandler):
     else:
       return False
 
-  def _write_response(self, code, msg):
-    self.set_status(code)
-    self.set_header('Content-Type', 'application/json; charset=UTF-8')
-    self.write(msg)
-
   def _handle(self, request):
     name = get_first_arg_name_from_request(request)
 
     if not is_valid_newaccount_name(name):
-      failmsg = ''.join(['{\"msg\":\"failed, invalid account name \'', name, '\'\"}'])
-      self._write_response(400, failmsg)
+      failmsg = {'msg': 'failed, unsupported account name \'{}\''.format(name)}
+      write_json_response(self, failmsg, 400)
       return
 
     if account_exists(name):
-      failmsg = ''.join(['{\"msg\":\"failed, account \'', name, '\' exists already\"}'])
-      self._write_response(400, failmsg)
+      failmsg = {'msg': 'failed, account \'{}\' exists already'.format(name)}
+      write_json_response(self, failmsg, 400)
       return
 
     owner_key = generate_key()
@@ -240,13 +232,13 @@ class CreateAccountHandler(tornado.web.RequestHandler):
           'account':  name,
           'keys':     { 'owner_key':  owner_key, 'active_key': active_key }
         }
-        self.write(json.dumps(retmsg))
+        write_json_response(self, retmsg)
       else:
-        failmsg = "{\"msg\":\"failed, failed to createa account\"}"
-        self._write_response(400, failmsg)
+        failmsg = {'msg': 'failed, failed to createa account'}
+        write_json_response(self, failmsg, 400)
     else:
-      failmsg = "{\"msg\":\"failed, failed to generate keys\"}"
-      self._write_response(400, failmsg)
+      failmsg = {'msg': 'failed, failed to generate keys'}
+      write_json_response(self, failmsg, 400)
 
   @ratelimit.limit_by(ip_24h_newaccount_amount_limiter)
   def post(self):
