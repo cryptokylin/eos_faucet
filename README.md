@@ -4,7 +4,7 @@
 ```
 cd your_working_dir
 
-https://github.com/cryptokylin/eos_faucet.git
+git clone https://github.com/cryptokylin/eos_faucet.git
 
 cd eos_faucet
 ```
@@ -18,12 +18,12 @@ python clfaucet.py
 
 you can create at most 1000 accounts per day. 
 ```
-curl http://13.125.53.113/create_account?<new_account_name>
+curl http://your_server_ip/create_account?<new_account_name>
 ```
 
 you can get 100 tokens each call and max 1000 tokens per day. 
 ```
-curl http://13.125.53.113/get_token?<your_account_name>
+curl http://your_server_ip/get_token?<your_account_name>
 ```
 ## note:
 
